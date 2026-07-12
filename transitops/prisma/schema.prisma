@@ -86,7 +86,7 @@ model Driver {
   licenseCategory   String
   licenseExpiryDate DateTime
   contactNumber     String
-  safetyScore       Decimal      @default(100) @db.Decimal(5, 2)
+  safetyScore         Decimal      @default(100) @db.Decimal(5, 2)
   status            DriverStatus @default(AVAILABLE)
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
