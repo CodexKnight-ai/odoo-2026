@@ -1,3 +1,5 @@
+"use client";
+
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 
@@ -7,7 +9,7 @@ export default function AppShell({ children }) {
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar />
-        <main className="flex-1 overflow-y-auto bg-white p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto bg-background p-6">{children}</main>
       </div>
     </div>
   );

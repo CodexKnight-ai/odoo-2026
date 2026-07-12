@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { loginSchema } from "@/lib/validators/auth";
+import { loginSchema, registerSchema, ROLES } from "@/lib/validators/auth";
+import { useAuthStore } from "@/store/authStore";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,64 +19,84 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const ROLES = ["Fleet Manager", "Dispatcher", "Safety Officer", "Financial Analyst"];
-
 const ROLE_ACCESS = [
   { role: "Fleet Manager", access: "Fleet, Maintenance" },
-  { role: "Dispatcher", access: "Dashboard, Trips" },
+  { role: "Driver", access: "Dashboard, Trips" },
   { role: "Safety Officer", access: "Drivers, Compliance" },
   { role: "Financial Analyst", access: "Fuel & Expenses, Analytics" },
 ];
 
 export default function LoginPage() {
   const router = useRouter();
-  const [serverError, setServerError] = useState(null); // { message, locked }
+  const login = useAuthStore((s) => s.login);
+  const [serverError, setServerError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState("login"); // "login" | "register"
+
+  const schema = mode === "login" ? loginSchema : registerSchema;
 
   const {
     register,
     handleSubmit,
     control,
     formState: { errors },
+    reset,
   } = useForm({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
       email: "",
       password: "",
-      role: "Dispatcher",
+      role: "DRIVER",
       rememberMe: true,
     },
   });
+
+  const switchMode = () => {
+    setMode((prev) => (prev === "login" ? "register" : "login"));
+    setServerError(null);
+    reset();
+  };
 
   const onSubmit = async (data) => {
     setLoading(true);
     setServerError(null);
     try {
+      const payload = {
+        email: data.email,
+        password: data.password,
+        action: mode,
+      };
+      if (mode === "register") {
+        payload.role = data.role;
+      }
+
       const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
       const result = await res.json();
 
       if (!res.ok) {
         setServerError({
-          message: result.message || "Invalid credentials.",
-          locked: result.locked || false,
+          message: result.error || "Invalid credentials.",
         });
         return;
       }
 
+      // Store auth state
+      login(result.token, result.user);
+
       // Redirect based on role
       const roleRoutes = {
-        "Fleet Manager": "/vehicles",
-        Dispatcher: "/dashboard",
-        "Safety Officer": "/drivers",
-        "Financial Analyst": "/analytics",
+        FLEET_MANAGER: "/dashboard",
+        DRIVER: "/dashboard",
+        SAFETY_OFFICER: "/dashboard",
+        FINANCIAL_ANALYST: "/dashboard",
       };
-      router.push(roleRoutes[data.role] || "/dashboard");
+      router.push(roleRoutes[result.user.role] || "/dashboard");
     } catch (err) {
-      setServerError({ message: "Something went wrong. Try again.", locked: false });
+      setServerError({ message: "Something went wrong. Try again." });
     } finally {
       setLoading(false);
     }
@@ -98,9 +119,9 @@ export default function LoginPage() {
             </h2>
             <ul className="space-y-2 text-sm text-slate-400">
               {ROLES.map((role) => (
-                <li key={role} className="flex items-center gap-2">
+                <li key={role.value} className="flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                  {role}
+                  {role.label}
                 </li>
               ))}
             </ul>
@@ -111,11 +132,15 @@ export default function LoginPage() {
       </div>
 
       {/* Right panel */}
-      <div className="flex flex-1 items-center justify-center bg-white px-6 py-12">
+      <div className="flex flex-1 items-center justify-center bg-background px-6 py-12">
         <div className="w-full max-w-sm">
-          <h2 className="text-2xl font-semibold">Sign in to your account</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Enter your credentials to continue
+          <h2 className="text-2xl font-semibold text-foreground">
+            {mode === "login" ? "Sign in to your account" : "Create an account"}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {mode === "login"
+              ? "Enter your credentials to continue"
+              : "Register to get started with TransitOps"}
           </p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
@@ -147,61 +172,97 @@ export default function LoginPage() {
               )}
             </div>
 
-            <div>
-              <Label>Role (RBAC)</Label>
-              <Controller
-                control={control}
-                name="role"
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className="mt-1.5">
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ROLES.map((role) => (
-                        <SelectItem key={role} value={role}>
-                          {role}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            {mode === "register" && (
+              <div>
+                <Label>Role</Label>
                 <Controller
                   control={control}
-                  name="rememberMe"
+                  name="role"
                   render={({ field }) => (
-                    <Checkbox
-                      id="rememberMe"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="mt-1.5">
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ROLES.map((role) => (
+                          <SelectItem key={role.value} value={role.value}>
+                            {role.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   )}
                 />
-                <Label htmlFor="rememberMe" className="text-sm font-normal">
-                  Remember me
-                </Label>
+                {errors.role && (
+                  <p className="mt-1 text-xs text-red-500">{errors.role.message}</p>
+                )}
               </div>
-              <a href="/forgot-password" className="text-sm text-blue-600 hover:underline">
-                Forgot password?
-              </a>
-            </div>
+            )}
+
+            {mode === "login" && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Controller
+                    control={control}
+                    name="rememberMe"
+                    render={({ field }) => (
+                      <Checkbox
+                        id="rememberMe"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    )}
+                  />
+                  <Label htmlFor="rememberMe" className="text-sm font-normal">
+                    Remember me
+                  </Label>
+                </div>
+              </div>
+            )}
 
             <Button
               type="submit"
               disabled={loading}
               className="w-full bg-amber-400 text-slate-900 hover:bg-amber-500"
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading
+                ? mode === "login"
+                  ? "Signing in..."
+                  : "Creating account..."
+                : mode === "login"
+                  ? "Sign In"
+                  : "Create Account"}
             </Button>
 
-            <hr className="my-2 border-slate-200" />
+            <div className="text-center text-sm text-muted-foreground">
+              {mode === "login" ? (
+                <>
+                  Don&apos;t have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={switchMode}
+                    className="font-medium text-amber-600 hover:text-amber-500 dark:text-amber-400"
+                  >
+                    Register
+                  </button>
+                </>
+              ) : (
+                <>
+                  Already have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={switchMode}
+                    className="font-medium text-amber-600 hover:text-amber-500 dark:text-amber-400"
+                  >
+                    Sign in
+                  </button>
+                </>
+              )}
+            </div>
 
-            <div className="text-xs text-slate-500">
+            <hr className="my-2 border-border" />
+
+            <div className="text-xs text-muted-foreground">
               <p className="mb-1.5">Access is scoped by role after login:</p>
               <ul className="space-y-1">
                 {ROLE_ACCESS.map(({ role, access }) => (
@@ -217,16 +278,11 @@ export default function LoginPage() {
 
       {/* Error state toast/box */}
       {serverError && (
-        <div className="fixed right-6 top-6 w-72 rounded-md border border-dashed border-red-400 bg-red-50 p-4">
-          <p className="text-xs font-medium uppercase text-red-500">Error state</p>
-          <p className="mt-1 flex items-center gap-1 text-sm text-red-600">
+        <div className="fixed right-6 top-6 w-72 rounded-md border border-dashed border-red-400 bg-red-50 dark:bg-red-950/50 p-4 z-50">
+          <p className="text-xs font-medium uppercase text-red-500">Error</p>
+          <p className="mt-1 flex items-center gap-1 text-sm text-red-600 dark:text-red-400">
             ✕ {serverError.message}
           </p>
-          {serverError.locked && (
-            <p className="mt-1 text-xs text-red-500">
-              Account locked after 5 failed attempts.
-            </p>
-          )}
         </div>
       )}
     </div>

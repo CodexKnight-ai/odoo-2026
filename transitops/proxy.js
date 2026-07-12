@@ -1,29 +1,70 @@
 import { NextResponse } from "next/server";
-import { decrypt } from "../transitops/app/src/lib/auth.js";
+import { jwtVerify } from "jose";
+
+const secret = new TextEncoder().encode(
+  process.env.JWT_SECRET || "transitops-development-secret-change-me"
+);
+
+const protectedPaths = [
+  "/dashboard",
+  "/vehicles",
+  "/drivers",
+  "/trips",
+  "/maintenance",
+  "/expenses",
+  "/analytics",
+  "/settings",
+];
+
+const authPaths = ["/login"];
 
 export async function proxy(request) {
-    const session = request.cookies.get("session")?.value;
+  const { pathname } = request.nextUrl;
+  const token = request.cookies.get("transitops_token")?.value;
 
-    if (request.nextUrl.pathname === "/login") {
-        return NextResponse.next();
+  const isProtected = protectedPaths.some(
+    (path) => pathname === path || pathname.startsWith(path + "/")
+  );
+  const isAuthPage = authPaths.some(
+    (path) => pathname === path || pathname.startsWith(path + "/")
+  );
+
+  // Verify token if present
+  let isValidToken = false;
+  if (token) {
+    try {
+      await jwtVerify(token, secret);
+      isValidToken = true;
+    } catch {
+      isValidToken = false;
     }
+  }
 
-    if (!session) {
-        return NextResponse.redirect(new URL("/login", request.url));
-    }
+  // Protected route without valid token → redirect to login
+  if (isProtected && !isValidToken) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("from", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
 
-    const payload = await decrypt(session);
-    if (!payload) {
-        return NextResponse.redirect(new URL("/login", request.url));
-    }
+  // Auth page with valid token → redirect to dashboard
+  if (isAuthPage && isValidToken) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
 
-    if (request.nextUrl.pathname.startsWith("/api/reports") && payload.role !== "FLEET_MANAGER") {
-        return new Response("Forbidden: Manager Access Only", { status: 403 });
-    }
-
-    return NextResponse.next();
+  return NextResponse.next();
 }
 
 export const config = {
-    matcher: ["/dashboard/:path*", "/api/vehicles/:path*", "/api/trips/:path*", "/api/reports/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/vehicles/:path*",
+    "/drivers/:path*",
+    "/trips/:path*",
+    "/maintenance/:path*",
+    "/expenses/:path*",
+    "/analytics/:path*",
+    "/settings/:path*",
+    "/login",
+  ],
 };
