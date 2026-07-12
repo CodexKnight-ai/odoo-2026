@@ -8,7 +8,7 @@ TransitOps is a centralized fleet and transport operations management platform. 
 
 TransitOps is designed around a multi-layered service-oriented architecture ensuring separation of concerns, high throughput, and reliable transactional integrity.
 
-![TransitOps Architecture](./public/architecture.jpg)
+![TransitOps Architecture](transitops/public/architecture.jpg)
 
 ### Architecture Highlights:
 - **Client App**: Responsive web interface styled dynamically with custom themes (supporting system/dark modes).
