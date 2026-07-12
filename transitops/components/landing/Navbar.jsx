@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useTheme } from "next-themes"
 import { Moon, Sun, Menu, X, ArrowRight, Activity } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export default function Navbar() {
   const { theme, setTheme } = useTheme()
@@ -54,11 +55,13 @@ export default function Navbar() {
             </Button>
           )}
 
-          <Button className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-xs transition-all">
-            <span className="flex items-center gap-1.5">
-              Launch App <ArrowRight className="h-4 w-4" />
-            </span>
-          </Button>
+          <Link href="/login">
+            <Button className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-xs transition-all">
+              <span className="flex items-center gap-1.5">
+                Launch App <ArrowRight className="h-4 w-4" />
+              </span>
+            </Button>
+          </Link>
         </div>
 
         {/* Mobile menu button */}
@@ -129,9 +132,11 @@ export default function Navbar() {
             </a>
           </nav>
           <div className="pt-4 border-t border-border">
-            <Button className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium flex items-center justify-center gap-2">
-              Launch App <ArrowRight className="h-4 w-4" />
-            </Button>
+            <Link href="/login">
+              <Button className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium flex items-center justify-center gap-2">
+                Launch App <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </div>
       )}

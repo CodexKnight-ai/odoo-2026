@@ -1,4 +1,4 @@
-import { Role } from "@prisma/client";
+import { Role } from "@/lib/generated/prisma/client";
 import { apiError, authenticate, body, id, json, number, required, toPlain, ApiError } from "@/app/src/lib/api";
 import { prisma } from "@/app/src/lib/db";
 
