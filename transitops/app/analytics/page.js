@@ -1,9 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TrendingUp, DollarSign, Fuel, Award, BarChart2, Download } from "lucide-react";
+import { TrendingUp, DollarSign, Fuel, Award, BarChart2, Download, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { jsPDF } from "jspdf";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function AnalyticsPage() {
   const [data, setData] = useState({ kpis: {}, vehicles: [] });
@@ -34,6 +41,35 @@ export default function AnalyticsPage() {
   }, []);
 
   const { kpis = {}, vehicles = [] } = data;
+
+  // Helper functions for exporting data are defined below sorting & KPI calculations
+
+  // Sorting calculations
+  const topRoiVehicles = [...vehicles]
+    .filter((v) => v.roi !== null)
+    .sort((a, b) => b.roi - a.roi)
+    .slice(0, 3);
+
+  const costliestVehicles = [...vehicles]
+    .sort((a, b) => b.operationalCost - a.operationalCost)
+    .slice(0, 3);
+
+  // Use server-computed aggregates when available, fall back to client-side calculation
+  const avgFuelEfficiency =
+    kpis.avgFuelEfficiency ??
+    (vehicles.filter((v) => v.fuelEfficiency).length > 0
+      ? vehicles.filter((v) => v.fuelEfficiency).reduce((sum, v) => sum + v.fuelEfficiency, 0) /
+        vehicles.filter((v) => v.fuelEfficiency).length
+      : 0);
+
+  const totalRevenue = kpis.totalRevenue ?? vehicles.reduce((sum, v) => sum + Number(v.revenue || 0), 0);
+  const totalCosts = vehicles.reduce((sum, v) => sum + Number(v.operationalCost || 0), 0);
+  const totalAcquisition = kpis.totalAcquisition ?? vehicles.reduce((sum, v) => sum + Number(v.acquisitionCost || 0), 0);
+  const averageRoi = totalAcquisition > 0
+    ? ((totalRevenue - totalCosts) / totalAcquisition) * 100
+    : totalCosts > 0
+    ? ((totalRevenue - totalCosts) / totalCosts) * 100
+    : 0;
 
   const handleExportCSV = () => {
     if (!vehicles || vehicles.length === 0) return;
@@ -76,32 +112,92 @@ export default function AnalyticsPage() {
     document.body.removeChild(link);
   };
 
-  // Sorting calculations
-  const topRoiVehicles = [...vehicles]
-    .filter((v) => v.roi !== null)
-    .sort((a, b) => b.roi - a.roi)
-    .slice(0, 3);
-
-  const costliestVehicles = [...vehicles]
-    .sort((a, b) => b.operationalCost - a.operationalCost)
-    .slice(0, 3);
-
-  // Use server-computed aggregates when available, fall back to client-side calculation
-  const avgFuelEfficiency =
-    kpis.avgFuelEfficiency ??
-    (vehicles.filter((v) => v.fuelEfficiency).length > 0
-      ? vehicles.filter((v) => v.fuelEfficiency).reduce((sum, v) => sum + v.fuelEfficiency, 0) /
-        vehicles.filter((v) => v.fuelEfficiency).length
-      : 0);
-
-  const totalRevenue = kpis.totalRevenue ?? vehicles.reduce((sum, v) => sum + Number(v.revenue || 0), 0);
-  const totalCosts = vehicles.reduce((sum, v) => sum + Number(v.operationalCost || 0), 0);
-  const totalAcquisition = kpis.totalAcquisition ?? vehicles.reduce((sum, v) => sum + Number(v.acquisitionCost || 0), 0);
-  const averageRoi = totalAcquisition > 0
-    ? ((totalRevenue - totalCosts) / totalAcquisition) * 100
-    : totalCosts > 0
-    ? ((totalRevenue - totalCosts) / totalCosts) * 100
-    : 0;
+  const handleExportPDF = () => {
+    if (!vehicles || vehicles.length === 0) return;
+    
+    const doc = new jsPDF();
+    doc.setFont("Helvetica");
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setTextColor(33, 43, 54);
+    doc.text("TransitOps - Fleet Performance & ROI Report", 14, 20);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(99, 115, 129);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 26);
+    
+    // Summary Cards (KPIs)
+    doc.setDrawColor(224, 224, 224);
+    doc.setFillColor(248, 249, 250);
+    doc.rect(14, 32, 182, 18, "F");
+    
+    doc.setFontSize(9);
+    doc.setTextColor(33, 43, 54);
+    doc.setFont("Helvetica", "bold");
+    doc.text("Avg Fuel Efficiency", 18, 38);
+    doc.text("Fleet Utilization", 65, 38);
+    doc.text("Total Operational Cost", 110, 38);
+    doc.text("Avg ROI %", 160, 38);
+    
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(10);
+    const effStr = avgFuelEfficiency > 0 ? `${avgFuelEfficiency.toFixed(1)} km/L` : "—";
+    const utilStr = `${Number(kpis.fleetUtilization || 0).toFixed(1)}%`;
+    const costStr = `INR ${Number(kpis.operationalCost || 0).toLocaleString()}`;
+    const roiStr = `${averageRoi.toFixed(1)}%`;
+    doc.text(effStr, 18, 44);
+    doc.text(utilStr, 65, 44);
+    doc.text(costStr, 110, 44);
+    doc.text(roiStr, 160, 44);
+    
+    // Table headers
+    let y = 60;
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(33, 43, 54);
+    doc.text("Asset Details", 14, y);
+    doc.text("Reg Number", 55, y);
+    doc.text("Distance", 88, y);
+    doc.text("Total Overhead", 112, y);
+    doc.text("Revenue", 148, y);
+    doc.text("Returns ROI", 175, y);
+    
+    doc.setDrawColor(180, 180, 180);
+    doc.line(14, y + 2, 196, y + 2);
+    y += 8;
+    
+    doc.setFont("Helvetica", "normal");
+    vehicles.forEach((v) => {
+      if (y > 280) {
+        doc.addPage();
+        y = 20;
+        // Redraw headers on new page
+        doc.setFont("Helvetica", "bold");
+        doc.text("Asset Details", 14, y);
+        doc.text("Reg Number", 55, y);
+        doc.text("Distance", 88, y);
+        doc.text("Total Overhead", 112, y);
+        doc.text("Revenue", 148, y);
+        doc.text("Returns ROI", 175, y);
+        doc.setDrawColor(180, 180, 180);
+        doc.line(14, y + 2, 196, y + 2);
+        y += 8;
+        doc.setFont("Helvetica", "normal");
+      }
+      
+      doc.text(v.name, 14, y);
+      doc.text(v.registrationNumber, 55, y);
+      doc.text(`${Number(v.distance).toLocaleString()} km`, 88, y);
+      doc.text(`INR ${Number(v.operationalCost).toLocaleString()}`, 112, y);
+      doc.text(`INR ${Number(v.revenue).toLocaleString()}`, 148, y);
+      const roiPercentage = v.roi !== null ? `${(Number(v.roi) * 100).toFixed(1)}%` : "N/A";
+      doc.text(roiPercentage, 175, y);
+      y += 8;
+    });
+    
+    doc.save(`fleet_analytics_report_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
 
   return (
     <div className="space-y-6 text-slate-800 max-w-7xl mx-auto">
@@ -113,13 +209,30 @@ export default function AnalyticsPage() {
             Perform multi-dimensional audits on asset resource values, cost metrics, operational margins, and ROIs.
           </p>
         </div>
-        <Button
-          onClick={handleExportCSV}
-          disabled={loading || vehicles.length === 0}
-          className="bg-amber-400 text-slate-900 hover:bg-amber-500 h-9 font-semibold text-xs rounded-lg shadow-sm border-none flex items-center gap-1.5"
-        >
-          <Download className="h-3.5 w-3.5" /> Export CSV
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              disabled={loading || vehicles.length === 0}
+              className="bg-amber-400 text-slate-900 hover:bg-amber-500 h-9 font-semibold text-xs rounded-lg shadow-sm border-none flex items-center gap-1.5"
+            >
+              <Download className="h-3.5 w-3.5" /> Export <ChevronDown className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="bg-white border border-slate-200 shadow-lg rounded-lg p-1 min-w-[120px] text-slate-800">
+            <DropdownMenuItem
+              onClick={handleExportCSV}
+              className="cursor-pointer hover:bg-slate-100 px-3 py-2 text-xs rounded-md transition-colors flex items-center gap-2 font-medium"
+            >
+              Export as CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={handleExportPDF}
+              className="cursor-pointer hover:bg-slate-100 px-3 py-2 text-xs rounded-md transition-colors flex items-center gap-2 font-medium"
+            >
+              Export as PDF
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Error Banner */}
