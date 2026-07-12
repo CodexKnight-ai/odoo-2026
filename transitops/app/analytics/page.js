@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TrendingUp, DollarSign, Fuel, Award, BarChart2 } from "lucide-react";
+import { TrendingUp, DollarSign, Fuel, Award, BarChart2, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export default function AnalyticsPage() {
   const [data, setData] = useState({ kpis: {}, vehicles: [] });
@@ -34,6 +35,47 @@ export default function AnalyticsPage() {
 
   const { kpis = {}, vehicles = [] } = data;
 
+  const handleExportCSV = () => {
+    if (!vehicles || vehicles.length === 0) return;
+    const headers = [
+      "Vehicle Name",
+      "Registration Number",
+      "Distance (km)",
+      "Fuel Spend (INR)",
+      "Service Spend (INR)",
+      "Incidentals (INR)",
+      "Total Overhead (INR)",
+      "Revenue (INR)",
+      "Returns Index (ROI %)"
+    ];
+    
+    const rows = vehicles.map(v => [
+      v.name,
+      v.registrationNumber,
+      v.distance,
+      v.fuelCost,
+      v.maintenanceCost,
+      v.otherExpenseCost,
+      v.operationalCost,
+      v.revenue,
+      v.roi !== null ? `${(Number(v.roi) * 100).toFixed(2)}%` : "N/A"
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `fleet_analytics_report_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Sorting calculations
   const topRoiVehicles = [...vehicles]
     .filter((v) => v.roi !== null)
@@ -64,11 +106,20 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-6 text-slate-800 max-w-7xl mx-auto">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold tracking-tight text-slate-900">Reports & Analytics</h1>
-        <p className="text-xs text-slate-500 mt-1">
-          Perform multi-dimensional audits on asset resource values, cost metrics, operational margins, and ROIs.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-slate-900">Reports & Analytics</h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Perform multi-dimensional audits on asset resource values, cost metrics, operational margins, and ROIs.
+          </p>
+        </div>
+        <Button
+          onClick={handleExportCSV}
+          disabled={loading || vehicles.length === 0}
+          className="bg-amber-400 text-slate-900 hover:bg-amber-500 h-9 font-semibold text-xs rounded-lg shadow-sm border-none flex items-center gap-1.5"
+        >
+          <Download className="h-3.5 w-3.5" /> Export CSV
+        </Button>
       </div>
 
       {/* Error Banner */}
