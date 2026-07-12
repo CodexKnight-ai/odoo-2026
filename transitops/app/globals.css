@@ -84,37 +84,222 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: oklch(0.12 0.015 240);
+  --foreground: oklch(0.95 0.005 240);
+  --card: oklch(0.16 0.015 240);
+  --card-foreground: oklch(0.95 0.005 240);
+  --popover: oklch(0.14 0.015 240);
+  --popover-foreground: oklch(0.95 0.005 240);
+  --primary: oklch(0.85 0.06 85);
+  --primary-foreground: oklch(0.12 0.015 240);
+  --secondary: oklch(0.20 0.015 240);
+  --secondary-foreground: oklch(0.95 0.005 240);
+  --muted: oklch(0.20 0.015 240);
+  --muted-foreground: oklch(0.65 0.015 240);
+  --accent: oklch(0.20 0.015 240);
+  --accent-foreground: oklch(0.95 0.005 240);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.75 0.12 85 / 50%);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar: oklch(0.14 0.015 240);
+  --sidebar-foreground: oklch(0.95 0.005 240);
+  --sidebar-primary: oklch(0.85 0.06 85);
+  --sidebar-primary-foreground: oklch(0.12 0.015 240);
+  --sidebar-accent: oklch(0.20 0.015 240);
+  --sidebar-accent-foreground: oklch(0.95 0.005 240);
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: oklch(0.75 0.12 85 / 50%);
+
+  /* Background overrides */
+  & .bg-white {
+    background-color: oklch(0.16 0.015 240) !important;
+  }
+  
+  & .bg-slate-50 {
+    background-color: oklch(0.12 0.015 240) !important;
+  }
+  
+  & .bg-slate-50\/50 {
+    background-color: oklch(0.12 0.015 240 / 50%) !important;
+  }
+  
+  & .bg-slate-50\/75 {
+    background-color: oklch(0.12 0.015 240 / 75%) !important;
+  }
+
+  & .bg-slate-50\/20 {
+    background-color: oklch(0.12 0.015 240 / 20%) !important;
+  }
+
+  & .bg-slate-55 {
+    background-color: oklch(0.14 0.015 240) !important;
+  }
+  
+  & .bg-slate-100 {
+    background-color: oklch(0.20 0.015 240) !important;
+  }
+  
+  & .bg-slate-200 {
+    background-color: oklch(0.25 0.015 240) !important;
+  }
+
+  & .bg-slate-900\/60 {
+    background-color: oklch(0.08 0.015 240 / 60%) !important;
+  }
+
+  /* Active/Secondary states */
+  & .bg-amber-100 {
+    background-color: oklch(0.22 0.035 85) !important;
+  }
+
+  & .bg-amber-50 {
+    background-color: oklch(0.20 0.03 85 / 40%) !important;
+  }
+
+  /* Badge / Status color blocks */
+  & .bg-emerald-50 {
+    background-color: oklch(0.20 0.04 140 / 30%) !important;
+  }
+  & .bg-blue-50 {
+    background-color: oklch(0.20 0.04 240 / 30%) !important;
+  }
+  & .bg-rose-50 {
+    background-color: oklch(0.20 0.04 15 / 30%) !important;
+  }
+  
+  /* Text color overrides */
+  & .text-slate-900 {
+    color: oklch(0.98 0.005 240) !important;
+  }
+  
+  & .text-slate-850,
+  & .text-slate-800 {
+    color: oklch(0.92 0.005 240) !important;
+  }
+  
+  & .text-slate-750,
+  & .text-slate-700 {
+    color: oklch(0.85 0.01 240) !important;
+  }
+  
+  & .text-slate-600 {
+    color: oklch(0.75 0.01 240) !important;
+  }
+  
+  & .text-slate-550,
+  & .text-slate-500 {
+    color: oklch(0.65 0.01 240) !important;
+  }
+  
+  & .text-slate-455,
+  & .text-slate-450,
+  & .text-slate-400 {
+    color: oklch(0.55 0.01 240) !important;
+  }
+
+  /* Specific accents */
+  & .text-amber-900 {
+    color: oklch(0.85 0.06 85) !important;
+  }
+  & .text-amber-850,
+  & .text-amber-700 {
+    color: oklch(0.80 0.06 85) !important;
+  }
+  & .text-emerald-700 {
+    color: oklch(0.80 0.08 140) !important;
+  }
+  & .text-blue-700 {
+    color: oklch(0.80 0.08 240) !important;
+  }
+  & .text-rose-700 {
+    color: oklch(0.80 0.08 15) !important;
+  }
+
+  /* Ensure gold background retains high text contrast */
+  & .bg-amber-400, & .bg-amber-400 *,
+  & .bg-amber-500, & .bg-amber-500 * {
+    color: oklch(0.12 0.015 240) !important;
+  }
+
+  /* Borders override */
+  & .border-slate-200 {
+    border-color: oklch(1 0 0 / 8%) !important;
+  }
+  
+  & .border-slate-100 {
+    border-color: oklch(1 0 0 / 6%) !important;
+  }
+
+  & .border-slate-300 {
+    border-color: oklch(1 0 0 / 12%) !important;
+  }
+  
+  & .border-amber-300 {
+    border-color: oklch(0.4 0.06 85 / 65%) !important;
+  }
+
+  & .border-amber-100 {
+    border-color: oklch(0.3 0.05 85 / 30%) !important;
+  }
+
+  & .border-emerald-200 {
+    border-color: oklch(0.8 0.08 140 / 30%) !important;
+  }
+  & .border-blue-200 {
+    border-color: oklch(0.8 0.08 240 / 30%) !important;
+  }
+  & .border-rose-200 {
+    border-color: oklch(0.8 0.08 15 / 30%) !important;
+  }
+
+  /* Hover states */
+  & .hover\:bg-slate-50:hover {
+    background-color: oklch(1 0 0 / 6%) !important;
+  }
+  
+  & .hover\:bg-slate-50\/50:hover {
+    background-color: oklch(1 0 0 / 4%) !important;
+  }
+  
+  & .hover\:bg-slate-100:hover {
+    background-color: oklch(1 0 0 / 8%) !important;
+  }
+  
+  & .hover\:text-slate-900:hover {
+    color: oklch(0.98 0.005 240) !important;
+  }
+
+  & .hover\:text-slate-600:hover {
+    color: oklch(0.80 0.01 240) !important;
+  }
+
+  /* Form Elements */
+  & input, 
+  & select, 
+  & textarea {
+    background-color: oklch(0.14 0.015 240) !important;
+    border-color: oklch(1 0 0 / 10%) !important;
+    color: oklch(0.95 0.005 240) !important;
+  }
+  
+  & input::placeholder, 
+  & textarea::placeholder {
+    color: oklch(0.55 0.01 240) !important;
+  }
+  
+  & input:focus, 
+  & select:focus, 
+  & textarea:focus {
+    border-color: oklch(0.75 0.12 85 / 40%) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 1px oklch(0.75 0.12 85 / 30%) !important;
+  }
 }
 
 @layer base {
