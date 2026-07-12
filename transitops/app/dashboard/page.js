@@ -37,10 +37,12 @@ export default function DashboardPage() {
   const [vehicleStatus, setVehicleStatus] = useState({ available: 0, onTrip: 0, inShop: 0, retired: 0 });
   const [recentTrips, setRecentTrips] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setFetchError(null);
       try {
         // Fetch dashboard/reports data
         const params = new URLSearchParams();
@@ -48,8 +50,8 @@ export default function DashboardPage() {
         if (vehicleType !== "All") params.set("type", vehicleType);
 
         const [dashRes, tripsRes] = await Promise.all([
-          fetch(`/api/dashboard?${params.toString()}`),
-          fetch("/api/trips"),
+          fetch(`/api/dashboard?${params.toString()}`, { credentials: "include" }),
+          fetch("/api/trips", { credentials: "include" }),
         ]);
 
         if (dashRes.ok) {
@@ -64,6 +66,9 @@ export default function DashboardPage() {
             inShop: Math.round(((dashData.kpis?.vehiclesInMaintenance || 0) / total) * 100),
             retired: Math.max(0, 100 - Math.round(((dashData.kpis?.availableVehicles || 0) / total) * 100) - Math.round(((dashData.kpis?.activeVehicles || 0) / total) * 100) - Math.round(((dashData.kpis?.vehiclesInMaintenance || 0) / total) * 100)),
           });
+        } else {
+          const err = await dashRes.json().catch(() => ({}));
+          setFetchError(err.error || `Dashboard error ${dashRes.status}`);
         }
 
         if (tripsRes.ok) {
@@ -84,6 +89,7 @@ export default function DashboardPage() {
         }
       } catch (err) {
         // Graceful fallback — UI stays with empty state
+        setFetchError("Failed to connect to server.");
         console.error("Dashboard fetch error:", err);
       } finally {
         setLoading(false);
@@ -95,6 +101,13 @@ export default function DashboardPage() {
 
   return (
     <>
+      {/* Error Banner */}
+      {fetchError && (
+        <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-medium text-rose-700">
+          ⚠ {fetchError}
+        </div>
+      )}
+
       {/* Filters */}
       <div className="mb-4">
         <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">Filters</p>

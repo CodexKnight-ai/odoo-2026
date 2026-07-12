@@ -7,17 +7,23 @@ import { Badge } from "@/components/ui/badge";
 export default function AnalyticsPage() {
   const [data, setData] = useState({ kpis: {}, vehicles: [] });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       setLoading(true);
+      setError(null);
       try {
-        const res = await fetch("/api/reports");
+        const res = await fetch("/api/reports", { credentials: "include" });
         if (res.ok) {
           const json = await res.json();
           setData(json);
+        } else {
+          const err = await res.json().catch(() => ({}));
+          setError(err.error || `Error ${res.status}`);
         }
       } catch (err) {
+        setError("Failed to connect to server.");
         console.error(err);
       } finally {
         setLoading(false);
@@ -26,7 +32,7 @@ export default function AnalyticsPage() {
     fetchAnalytics();
   }, []);
 
-  const { kpis, vehicles } = data;
+  const { kpis = {}, vehicles = [] } = data;
 
   // Sorting calculations
   const topRoiVehicles = [...vehicles]
@@ -38,15 +44,22 @@ export default function AnalyticsPage() {
     .sort((a, b) => b.operationalCost - a.operationalCost)
     .slice(0, 3);
 
-  // Dynamic calculations for overall stats
-  const averageEfficiency = vehicles.length
-    ? vehicles.reduce((sum, v) => sum + (v.fuelEfficiency || 0), 0) / vehicles.length
-    : 0;
+  // Use server-computed aggregates when available, fall back to client-side calculation
+  const avgFuelEfficiency =
+    kpis.avgFuelEfficiency ??
+    (vehicles.filter((v) => v.fuelEfficiency).length > 0
+      ? vehicles.filter((v) => v.fuelEfficiency).reduce((sum, v) => sum + v.fuelEfficiency, 0) /
+        vehicles.filter((v) => v.fuelEfficiency).length
+      : 0);
 
-  const totalAcquisition = vehicles.reduce((sum, v) => sum + Number(v.acquisitionCost || 0), 0);
-  const totalRevenue = vehicles.reduce((sum, v) => sum + Number(v.revenue || 0), 0);
+  const totalRevenue = kpis.totalRevenue ?? vehicles.reduce((sum, v) => sum + Number(v.revenue || 0), 0);
   const totalCosts = vehicles.reduce((sum, v) => sum + Number(v.operationalCost || 0), 0);
-  const averageRoi = totalAcquisition ? ((totalRevenue - totalCosts) / totalAcquisition) * 100 : 0;
+  const totalAcquisition = kpis.totalAcquisition ?? vehicles.reduce((sum, v) => sum + Number(v.acquisitionCost || 0), 0);
+  const averageRoi = totalAcquisition > 0
+    ? ((totalRevenue - totalCosts) / totalAcquisition) * 100
+    : totalCosts > 0
+    ? ((totalRevenue - totalCosts) / totalCosts) * 100
+    : 0;
 
   return (
     <div className="space-y-6 text-slate-800 max-w-7xl mx-auto">
@@ -58,6 +71,13 @@ export default function AnalyticsPage() {
         </p>
       </div>
 
+      {/* Error Banner */}
+      {error && (
+        <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-medium text-rose-700">
+          ⚠ {error}
+        </div>
+      )}
+
       {/* KPI Cards Summary */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
@@ -66,7 +86,7 @@ export default function AnalyticsPage() {
             <Fuel className="h-4 w-4 text-amber-500" />
           </div>
           <div className="mt-2.5 text-xl font-bold font-mono text-slate-850 text-slate-800">
-            {loading ? "..." : `${averageEfficiency.toFixed(1)} km/L`}
+            {loading ? "..." : avgFuelEfficiency > 0 ? `${avgFuelEfficiency.toFixed(1)} km/L` : "—"}
           </div>
           <p className="text-[9px] text-slate-400 mt-1 font-medium">Kilometers per liter operational average</p>
         </div>
@@ -77,7 +97,7 @@ export default function AnalyticsPage() {
             <TrendingUp className="h-4 w-4 text-emerald-600" />
           </div>
           <div className="mt-2.5 text-xl font-bold font-mono text-slate-850 text-slate-800">
-            {loading ? "..." : `${Math.round(kpis.fleetUtilization || 0)}%`}
+            {loading ? "..." : `${Number(kpis.fleetUtilization || 0).toFixed(1)}%`}
           </div>
           <p className="text-[9px] text-slate-400 mt-1 font-medium">Rostered resource dispatch percentage</p>
         </div>

@@ -1,5 +1,4 @@
 "use client";
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -14,10 +13,9 @@ import {
   Settings,
   ShieldCheck,
 } from "lucide-react";
-
 const NAV_ITEMS = [
   { label: "Dashboard", sub: "Operational Console", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Assets", sub: "Fleet Registry", href: "/vehicles", icon: Boxes },
+  { label: "Vehicles", sub: "Fleet Registry", href: "/vehicles", icon: Boxes },
   { label: "Operators", sub: "Team Tracker", href: "/drivers", icon: Users },
   { label: "Workflows", sub: "Trip Dispatcher", href: "/trips", icon: GitBranch },
   { label: "Maintenance", sub: "Service Logs", href: "/maintenance", icon: Wrench },

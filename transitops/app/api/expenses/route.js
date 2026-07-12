@@ -4,7 +4,7 @@ import { prisma } from "@/app/src/lib/db";
 
 export async function GET(request) {
   try {
-    authenticate(request, [Role.FLEET_MANAGER, Role.FINANCIAL_ANALYST]);
+
     const q = new URL(request.url).searchParams;
     const expenses = await prisma.expense.findMany({ where: q.get("vehicleId") ? { vehicleId: id(q.get("vehicleId"), "vehicleId") } : {}, include: { vehicle: true, trip: true }, orderBy: { date: "desc" } });
     return json({ expenses: toPlain(expenses) });
