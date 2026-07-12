@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { decrypt } from "../transitops/app/src/lib/auth.js";
 
-export async function middleware(request) {
+export async function proxy(request) {
     const session = request.cookies.get("session")?.value;
 
     if (request.nextUrl.pathname === "/login") {
